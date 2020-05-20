@@ -1,4 +1,4 @@
-
+#coding=utf-8
 
 ##被调用的函数包。使用到的函数：validate_on+lfw.py
 

@@ -161,9 +161,17 @@ def main(args):
         total_loss = tf.add_n([cross_entropy_mean] + regularization_losses, name='total_loss')
 
         # Build a Graph that trains the model with one batch of examples and updates the model parameters
+        # create funetune var list: Logits
+        finetune_var_list = tf.contrib.framework.get_variables('Logits')
         train_op = facenet.train(total_loss, global_step, args.optimizer, 
-            learning_rate, args.moving_average_decay, tf.global_variables(), args.log_histograms)
+            learning_rate, args.moving_average_decay, finetune_var_list, args.log_histograms)
+        #train_op = facenet.train(total_loss, global_step, args.optimizer, 
+        #    learning_rate, args.moving_average_decay, tf.global_variables(), args.log_histograms)
         
+        # create a restore saver
+        all_vars = tf.trainable_variables()
+        vars_to_restore = [v for v in all_vars if not v.name.startswith("Logits")]
+        saver_restore = tf.train.Saver(vars_to_restore)
         # Create a saver
         saver = tf.train.Saver(tf.trainable_variables(), max_to_keep=3)
 
@@ -183,7 +191,11 @@ def main(args):
 
             if pretrained_model:
                 print('Restoring pretrained model: %s' % pretrained_model)
-                saver.restore(sess, pretrained_model)
+                #saver.restore(sess, pretrained_model)
+                model_exp = os.path.expanduser(args.pretrained_model)
+                print("model_exp:", model_exp)
+                _, ckpt_file = facenet.get_model_filenames(model_exp)
+                saver_restore.restore(sess, os.path.join(model_exp, ckpt_file))
 
             # Training and validation loop
             print('Running training')
@@ -356,7 +368,7 @@ def parse_arguments(argv):
     parser.add_argument('--model_def', type=str,
         help='Model definition. Points to a module containing the definition of the inference graph.', default='models.inception_resnet_v1')
     parser.add_argument('--max_nrof_epochs', type=int,
-        help='Number of epochs to run.', default=500)
+        help='Number of epochs to run.', default=10)
     parser.add_argument('--batch_size', type=int,
         help='Number of images to process in a batch.', default=90)
     parser.add_argument('--image_size', type=int,

@@ -1,4 +1,4 @@
-
+#coding=utf-8
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -136,9 +136,20 @@ def main(args):
         total_loss = tf.add_n([triplet_loss] + regularization_losses, name='total_loss')
 
         # Build a Graph that trains the model with one batch of examples and updates the model parameters
+        # create funetune var list: Logits
+        #finetune_var_list = tf.contrib.framework.get_variables('Logits')
+        #train_op = facenet.train(total_loss, global_step, args.optimizer, 
+        #    learning_rate, args.moving_average_decay, finetune_var_list)
+
         # 确定优化方法并根据损失函数求梯度，在这里，每更行一次参数，global_step会加1
         train_op = facenet.train(total_loss, global_step, args.optimizer, 
             learning_rate, args.moving_average_decay, tf.global_variables())
+
+        # create a restore saver 
+        all_vars = tf.trainable_variables() 
+        vars_to_restore = [v for v in all_vars if not v.name.startswith("Logits")] 
+        saver_restore = tf.train.Saver(vars_to_restore) 
+
         
         # Create a saver创建一个saver用来保存或者从内存中回复一个模型参数
         saver = tf.train.Saver(tf.trainable_variables(), max_to_keep=3)
@@ -165,7 +176,12 @@ def main(args):
 
             if args.pretrained_model:
                 print('Restoring pretrained model: %s' % args.pretrained_model)
-                saver.restore(sess, os.path.expanduser(args.pretrained_model))
+                #saver.restore(sess, os.path.expanduser(args.pretrained_model))
+                model_exp = os.path.expanduser(args.pretrained_model)
+                print("model_exp:", model_exp)
+                _, ckpt_file = facenet.get_model_filenames(model_exp)
+                saver.restore(sess, os.path.join(model_exp, ckpt_file))
+
 
             # Training and validation loop
             epoch = 0
@@ -459,9 +475,9 @@ def parse_arguments(argv):
     parser.add_argument('--image_size', type=int,
         help='Image size (height, width) in pixels.', default=160)
     parser.add_argument('--people_per_batch', type=int,
-        help='Number of people per batch.', default=45)
+        help='Number of people per batch.', default=5) #origin:45
     parser.add_argument('--images_per_person', type=int,
-        help='Number of images per person.', default=20)
+        help='Number of images per person.', default=3) # origin:20
     parser.add_argument('--epoch_size', type=int,
         help='Number of batches per epoch.', default=1000)
     parser.add_argument('--alpha', type=float,

@@ -1,4 +1,4 @@
-
+#coding=utf-8
 #冻结图？？从字面意思理解应该是固定模型参数？
 
 from __future__ import absolute_import
@@ -70,9 +70,9 @@ def freeze_graph_def(sess, input_graph_def, output_node_names):
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('model_dir', type=str, 
+    parser.add_argument('--model_dir', type=str, 
         help='Directory containing the metagraph (.meta) file and the checkpoint (ckpt) file containing model parameters')
-    parser.add_argument('output_file', type=str, 
+    parser.add_argument('--output_file', type=str, 
         help='Filename for the exported graphdef protobuf (.pb)')
     return parser.parse_args(argv)
 
